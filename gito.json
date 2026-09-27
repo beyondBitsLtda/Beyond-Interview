@@ -1,0 +1,141 @@
+{
+  "$gito": 1,
+  "aplicacao": {
+    "nome": "Beyond Interview",
+    "codigo": "BEYOND",
+    "descricao": "Questionário web com mascote que entrevista potenciais clientes para descobrir o perfil do projeto deles e grava as respostas para a equipe da Beyond Bits consultar.",
+    "tipo": "Aplicação web",
+    "situacao": "em produção",
+    "responsavel": "Brayan Rodrigues",
+    "equipe": "Beyond Bits"
+  },
+  "versao": "0.1.0",
+  "atualizadoEm": "2026-09-27",
+  "compilacao": {
+    "numero": 1,
+    "data": "2026-09-27",
+    "artefato": ""
+  },
+  "historico": [
+    {
+      "versao": "0.1.0",
+      "data": "2026-09-27",
+      "branch": "main",
+      "tipo": "funcionalidade",
+      "resumo": "Ficha criada no Gito.",
+      "itens": [
+        "Primeiro registro de versão e ficha técnica da aplicação."
+      ],
+      "issues": []
+    }
+  ],
+  "ficha": {
+    "escopo": {
+      "objetivo": "Conduzir uma entrevista rápida e descontraída (\"descobrir a alma do projeto\") com potenciais clientes, captar o contato deles e entregar à equipe as respostas organizadas para preparar a proposta.",
+      "inclui": [
+        "Tela inicial com o título Beyond Interview e mascote animado em 3 poses (parado, andando, empolgado), com as imagens embutidas no HTML em base64.",
+        "Captura de lead: nome (obrigatório), e-mail (opcional) e tipo de projeto (landing page, site institucional, sistema/ferramenta web, CRM/painel de gestão, loja/e-commerce ou outra coisa).",
+        "Questionário de 15 perguntas (5 de múltipla escolha e 10 de texto livre), com barra de progresso, voltar/avançar e avanço automático nas perguntas de escolha.",
+        "Gravação da entrevista no Supabase ao terminar (nome, e-mail, tipo de projeto e todas as respostas em JSON).",
+        "Acesso da equipe: login por e-mail e senha (Supabase Auth), com sessão mantida ao recarregar a página.",
+        "Painel de respostas para o administrador: lista da mais nova para a mais antiga, com o texto completo de cada pergunta e opção escolhida, e botões Atualizar e Sair.",
+        "Opções de exibição configuráveis no componente: avanço automático, redução de animações e cor do papel de fundo."
+      ],
+      "naoInclui": [
+        "Editar, excluir ou exportar (CSV/Excel) respostas pelo painel.",
+        "Cadastro de usuários ou troca de administrador pela interface: o admin é criado no console do Supabase e definido na política RLS e no código.",
+        "Notificação por e-mail ou integração com CRM quando chega uma resposta nova.",
+        "Backend próprio, API ou etapa de build: é um site estático e não lê variáveis de ambiente da Vercel.",
+        "Termo de consentimento/aviso de privacidade (LGPD) na tela de coleta de dados."
+      ]
+    },
+    "stack": [
+      "HTML, CSS e JavaScript estáticos (index.html com template, estilos e lógica do componente)",
+      "dc-runtime (support.js, arquivo gerado: interpreta o template <x-dc> com sc-if/sc-for e a classe DCLogic)",
+      "React 18.3.1 e ReactDOM 18.3.1 (UMD, carregados pelo dc-runtime via unpkg com SRI)",
+      "Babel Standalone 7.29.0 (transpila a lógica do componente no navegador, via unpkg com SRI)",
+      "Supabase JS v2 (UMD via jsDelivr)",
+      "Supabase: PostgreSQL + Auth + Row Level Security",
+      "Google Fonts: Bangers, Comic Neue e Nunito",
+      "Vercel (hospedagem estática, sem framework/preset)"
+    ],
+    "arquitetura": {
+      "resumo": "Site estático de página única (index.html + support.js, que precisam ficar lado a lado). O support.js é o dc-runtime: carrega React e Babel do unpkg, lê o template <x-dc> e o script data-dc-script do index.html e renderiza o componente no navegador. A lógica do componente controla as fases intro → lead → form → done e login → admin. O navegador conversa direto com o Supabase pelo supabase-js usando a URL do projeto e a chave pública (publishable/anon), sem servidor intermediário. Os dados ficam na tabela public.respostas (PostgreSQL no Supabase), protegida por RLS: visitantes anônimos só podem inserir; somente o e-mail do administrador, autenticado pelo Supabase Auth, pode ler. O e-mail do admin aparece em dois lugares que precisam ficar iguais: a política do supabase_setup.sql e a constante ADMIN_EMAIL do index.html (esta só decide o que a tela mostra; quem protege é o RLS). A tabela guarda dados pessoais dos leads (nome e e-mail), sujeitos à LGPD.",
+      "diagramas": [
+        {
+          "titulo": "Visão geral da arquitetura",
+          "mermaid": "flowchart LR\n  V[Visitante / lead] -->|HTTPS| H[Vercel<br/>index.html + support.js]\n  A[Admin da equipe] -->|HTTPS| H\n  H -->|React 18 + Babel| U[(unpkg CDN)]\n  H -->|supabase-js v2| J[(jsDelivr CDN)]\n  H -->|fontes| G[(Google Fonts)]\n  subgraph Navegador\n    R[dc-runtime<br/>componente DCLogic]\n  end\n  H --> R\n  R -->|insert anon| S[Supabase REST<br/>PostgREST]\n  R -->|login e-mail/senha| AU[Supabase Auth]\n  R -->|select autenticado| S\n  S --> DB[(PostgreSQL<br/>public.respostas<br/>RLS)]\n  AU -. JWT com e-mail .-> S"
+        },
+        {
+          "titulo": "Fluxo de telas",
+          "mermaid": "stateDiagram-v2\n  [*] --> intro\n  intro --> lead: Começar\n  lead --> form: nome + tipo de projeto\n  form --> form: 15 perguntas\n  form --> done: última resposta\n  done --> intro: recomeçar\n  intro --> login: Acesso da equipe\n  login --> admin: login do admin\n  admin --> intro: Sair"
+        }
+      ]
+    },
+    "hospedagem": [
+      {
+        "ambiente": "Produção",
+        "onde": "Vercel (site estático, sem framework). A URL pública ainda não foi registrada nesta ficha.",
+        "url": "",
+        "verificar": false
+      }
+    ],
+    "bancoDeDados": [
+      {
+        "nome": "Supabase Beyond Interview",
+        "tipo": "PostgreSQL (Supabase)",
+        "servidor": "wilxxkkqgoigmrdgufej.supabase.co",
+        "porta": 443,
+        "base": "postgres (schema public, tabela respostas)",
+        "acesso": "https://supabase.com/dashboard/project/wilxxkkqgoigmrdgufej",
+        "observacao": "A aplicação acessa pela API REST do Supabase (HTTPS, porta 443), não por conexão direta ao PostgreSQL. Tabela respostas: id (uuid), created_at (timestamptz), nome, email, tipo_projeto (text) e respostas (jsonb). RLS ligado: insert para anon/authenticated, select só para o e-mail do admin. Estrutura criada pelo supabase_setup.sql. Contém dados pessoais de leads (nome e e-mail). Acesso ao console: solicitar ao responsável técnico."
+      }
+    ],
+    "integracoes": [
+      {
+        "nome": "Supabase (API REST + Auth)",
+        "descricao": "Grava as entrevistas, autentica o administrador e devolve as respostas ao painel.",
+        "url": "https://wilxxkkqgoigmrdgufej.supabase.co"
+      },
+      {
+        "nome": "unpkg (CDN)",
+        "descricao": "Fornece React 18.3.1, ReactDOM 18.3.1 e Babel Standalone 7.29.0, carregados pelo support.js com verificação de integridade (SRI).",
+        "url": "https://unpkg.com"
+      },
+      {
+        "nome": "jsDelivr (CDN)",
+        "descricao": "Fornece a biblioteca supabase-js v2, carregada sob demanda pelo componente.",
+        "url": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
+      },
+      {
+        "nome": "Google Fonts",
+        "descricao": "Fontes Bangers, Comic Neue e Nunito usadas na interface.",
+        "url": "https://fonts.google.com"
+      }
+    ],
+    "links": [
+      {
+        "titulo": "Repositório",
+        "url": "https://github.com/beyondBitsLtda/Beyond-Interview"
+      },
+      {
+        "titulo": "Guia de configuração e publicação (LEIA-ME.md)",
+        "url": "https://github.com/beyondBitsLtda/Beyond-Interview/blob/main/LEIA-ME.md"
+      },
+      {
+        "titulo": "Script do banco (supabase_setup.sql)",
+        "url": "https://github.com/beyondBitsLtda/Beyond-Interview/blob/main/supabase_setup.sql"
+      },
+      {
+        "titulo": "Console do Supabase",
+        "url": "https://supabase.com/dashboard/project/wilxxkkqgoigmrdgufej"
+      }
+    ],
+    "contatos": [
+      {
+        "papel": "Responsável técnico",
+        "nome": "Brayan Rodrigues"
+      }
+    ]
+  }
+}
